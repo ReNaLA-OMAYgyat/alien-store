@@ -12,29 +12,38 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/login", {
-        email: email, // harus persis "email"
-        password: password, // harus persis "password"
-      });
+    const res = await api.post("/login", {
+      email: email,
+      password: password,
+    });
 
-      alert(res.data.message);
-      localStorage.setItem("token", res.data.token);
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Error Response:", err.response?.data);
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("role", res.data.role);
 
-      // kalau error validasi
-      if (err.response?.status === 422) {
-        const errors = err.response.data;
-        let messages = [];
-        for (let field in errors) {
-          messages.push(errors[field][0]); // ambil pesan pertama
-        }
-        alert(messages.join("\n"));
-      } else {
-        alert(err.response?.data?.message || "Terjadi kesalahan, coba lagi.");
-      }
+    alert(res.data.message);
+
+    // redirect sesuai role
+    if (res.data.role === "Admin") {
+      navigate("/dashboard"); // halaman admin
+    } else if (res.data.role === "User") {
+      navigate("/beranda"); // halaman user
+    } else {
+      navigate("/login");
     }
+  } catch (err) {
+    console.error("Error Response:", err.response?.data);
+
+    if (err.response?.status === 422) {
+      const errors = err.response.data;
+      let messages = [];
+      for (let field in errors) {
+        messages.push(errors[field][0]);
+      }
+      alert(messages.join("\n"));
+    } else {
+      alert(err.response?.data?.message || "Terjadi kesalahan, coba lagi.");
+    }
+  }
   };
 
   return (

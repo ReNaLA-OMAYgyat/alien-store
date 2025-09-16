@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 import SubCategoryModal from "../components/subcategories.jsx";
+import Sidebar from "../components/sidebar.jsx";
 
 export default function Dashboard() {
   const [categories, setCategories] = useState([]);
@@ -17,6 +18,8 @@ export default function Dashboard() {
 
   const [showSubModal, setShowSubModal] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
+  const [subToDelete, setSubToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -173,48 +176,28 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const requestDeleteSubcategory = async () => {
+    if (!subToDelete) return;
+    try {
+      setDeleting(true);
+      const token = localStorage.getItem("token");
+      await api.delete(`/subcategories/${subToDelete.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubToDelete(null);
+      fetchSubcategories();
+    } catch (err) {
+      console.error("Gagal menghapus subcategory:", err);
+      alert("Gagal menghapus subcategory");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="d-flex vh-100">
       {/* Sidebar */}
-      <div
-        className="text-white p-3 d-flex flex-column shadow"
-        style={{
-          width: "250px",
-          background: "linear-gradient(180deg, #111 0%, #1f1f1f 100%)",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div className="d-flex align-items-center justify-content-center mb-4">
-          <i className="bi bi-bag-check-fill me-2" style={{ fontSize: 20 }}></i>
-          <h4 className="fw-bold m-0">AlienStore</h4>
-        </div>
-        <ul className="nav flex-column">
-          <li className="nav-item mb-1">
-            <a
-              href="#"
-              className="nav-link text-white d-flex align-items-center gap-2 px-2 py-2 rounded-2"
-              style={{ transition: "background .2s" }}
-            >
-              <i className="bi bi-speedometer2"></i>
-              <span>Dashboard</span>
-            </a>
-          </li>
-          <li className="nav-item mb-1">
-            <a
-              href="#"
-              className="nav-link text-white d-flex align-items-center gap-2 px-2 py-2 rounded-2 bg-primary bg-opacity-25"
-              style={{ transition: "background .2s" }}
-            >
-              <i className="bi bi-folder2"></i>
-              <span>Subcategories</span>
-            </a>
-          </li>
-        </ul>
-        <div className="mt-auto pt-3 small text-secondary">
-          <span className="d-block">v1.0</span>
-        </div>
-      </div>
-
+      <Sidebar />
       {/* Main Content */}
       <div className="flex-grow-1 bg-light p-4">
         <h2 className="fw-bold mb-4">Dashboard Subcategories</h2>
@@ -397,15 +380,23 @@ export default function Dashboard() {
                           ?.name || "-"}
                       </td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-outline-primary me-2"
-                          onClick={() => {
-                            setSelectedSub(sub);
-                            setShowSubModal(true);
-                          }}
-                        >
-                          Edit
-                        </button>
+                        <div className="btn-group btn-group-sm" role="group">
+                          <button
+                            className="btn btn-outline-primary"
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowSubModal(true);
+                            }}
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-danger"
+                            onClick={() => setSubToDelete(sub)}
+                          >
+                            <i className="bi bi-trash3"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -506,6 +497,61 @@ export default function Dashboard() {
         subcategory={selectedSub}
         categories={categories}
       />
+
+      {/* Delete Confirmation Modal */}
+      {subToDelete && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ background: "rgba(0,0,0,0.5)", zIndex: 1060 }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white rounded shadow" style={{ width: "460px" }}>
+            <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
+              <h5 className="m-0">Hapus Subcategory</h5>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => setSubToDelete(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-3">
+              <p className="mb-0">
+                Yakin ingin menghapus <strong>{subToDelete.name}</strong>?
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            <div className="p-3 d-flex justify-content-end gap-2 border-top">
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setSubToDelete(null)}
+                disabled={deleting}
+              >
+                Batal
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={requestDeleteSubcategory}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
+                    Menghapus...
+                  </>
+                ) : (
+                  "Hapus"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,25 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    // cek token di localStorage (anggap token disimpan saat login)
+    const token = localStorage.getItem("token");
+    const savedRole = localStorage.getItem("role") || "";
+    setIsLoggedIn(!!token);
+    setRole(savedRole);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/login");
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
       <div className="container">
@@ -44,11 +63,13 @@ function Navbar() {
                   Produk
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/dashboard">
-                  User
-                </Link>
-              </li>
+              {role === "Admin" && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/dashboard">
+                    Dashboard
+                  </Link>
+                </li>
+              )}
               <li className="nav-item">
                 <Link
                   className="nav-link d-flex align-items-center"
@@ -59,14 +80,22 @@ function Navbar() {
               </li>
             </ul>
 
-            {/* Kanan: Login & Register */}
+            {/* Kanan: Login & Register atau Logout */}
             <div className="d-flex gap-2">
-              <Link className="btn btn-outline-secondary" to="/login">
-                Masuk
-              </Link>
-              <Link className="btn btn-outline-secondary" to="/Daftar">
-                Daftar
-              </Link>
+              {!isLoggedIn ? (
+                <>
+                  <Link className="btn btn-outline-secondary" to="/login">
+                    Masuk
+                  </Link>
+                  <Link className="btn btn-outline-secondary" to="/daftar">
+                    Daftar
+                  </Link>
+                </>
+              ) : (
+                <button className="btn btn-danger" onClick={handleLogout}>
+                  Keluar
+                </button>
+              )}
             </div>
           </div>
         </div>

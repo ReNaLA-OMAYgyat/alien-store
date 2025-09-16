@@ -10,7 +10,7 @@ export default function Daftar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role_id, setRoleId] = useState(1);
+  const [role_id, setRoleId] = useState(2);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -120,7 +120,7 @@ if (password !== confirmPassword) {
               type="hidden"
               className="form-control p-3 btn btn-outline-dark"
               id="role_id"
-              value={1}
+              value={2}
             />
           </div>
           {/* Password */}
