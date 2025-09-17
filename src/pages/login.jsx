@@ -12,38 +12,45 @@ export default function Login() {
     e.preventDefault();
 
     try {
-    const res = await api.post("/login", {
-      email: email,
-      password: password,
-    });
+      const res = await api.post("/login", {
+        email: email,
+        password: password,
+      });
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", res.data.role);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
 
-    alert(res.data.message);
+      // Trigger custom event untuk update navbar
+      window.dispatchEvent(
+        new CustomEvent("userLogin", {
+          detail: { role: res.data.role },
+        })
+      );
 
-    // redirect sesuai role
-    if (res.data.role === "Admin") {
-      navigate("/dashboard"); // halaman admin
-    } else if (res.data.role === "User") {
-      navigate("/beranda"); // halaman user
-    } else {
-      navigate("/login");
-    }
-  } catch (err) {
-    console.error("Error Response:", err.response?.data);
+      alert(res.data.message);
 
-    if (err.response?.status === 422) {
-      const errors = err.response.data;
-      let messages = [];
-      for (let field in errors) {
-        messages.push(errors[field][0]);
+      // redirect sesuai role
+      if (res.data.role === "Admin") {
+        navigate("/dashboard"); // halaman admin
+      } else if (res.data.role === "User") {
+        navigate("/beranda"); // halaman user
+      } else {
+        navigate("/login");
       }
-      alert(messages.join("\n"));
-    } else {
-      alert(err.response?.data?.message || "Terjadi kesalahan, coba lagi.");
+    } catch (err) {
+      console.error("Error Response:", err.response?.data);
+
+      if (err.response?.status === 422) {
+        const errors = err.response.data;
+        let messages = [];
+        for (let field in errors) {
+          messages.push(errors[field][0]);
+        }
+        alert(messages.join("\n"));
+      } else {
+        alert(err.response?.data?.message || "Terjadi kesalahan, coba lagi.");
+      }
     }
-  }
   };
 
   return (

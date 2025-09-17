@@ -14,9 +14,45 @@ function Navbar() {
     setRole(savedRole);
   }, []);
 
+  // Listen for storage changes (when user logs in from another tab)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const token = localStorage.getItem("token");
+      const savedRole = localStorage.getItem("role") || "";
+      setIsLoggedIn(!!token);
+      setRole(savedRole);
+    };
+
+    const handleUserLogin = (event) => {
+      const token = localStorage.getItem("token");
+      const savedRole = localStorage.getItem("role") || "";
+      setIsLoggedIn(!!token);
+      setRole(savedRole);
+    };
+
+    const handleUserLogout = () => {
+      setIsLoggedIn(false);
+      setRole("");
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("userLogin", handleUserLogin);
+    window.addEventListener("userLogout", handleUserLogout);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("userLogin", handleUserLogin);
+      window.removeEventListener("userLogout", handleUserLogout);
+    };
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+
+    // Trigger custom event untuk update navbar
+    window.dispatchEvent(new CustomEvent("userLogout"));
+
     navigate("/login");
   };
 
@@ -73,7 +109,7 @@ function Navbar() {
               <li className="nav-item">
                 <Link
                   className="nav-link d-flex align-items-center"
-                  to="/keranjang"
+                  to="/cart"
                 >
                   <i className="bi bi-cart3"></i>
                 </Link>

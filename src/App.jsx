@@ -4,8 +4,10 @@ import Dashboard from "./pages/dashboard";
 import Navbar from "./components/navbar";
 import Beranda from "./pages/beranda";
 import Daftar from "./pages/daftar";
-import Fashion from "./pages/fashion";
 import PrivateRouteAdmin from "./components/ProtecRoute";
+import Product from "./pages/product";
+import Cart from "./pages/cart";
+import ErrorBoundary from "./ErrorBoundary";
 export default function App() {
   const location = useLocation();
 
@@ -13,7 +15,8 @@ export default function App() {
     <>
       {location.pathname !== "/login" &&
         location.pathname !== "/daftar" &&
-        location.pathname !== "/dashboard" && <Navbar />}
+        location.pathname !== "/dashboard" &&
+        location.pathname !== "/product" && <Navbar />}
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />
 
@@ -27,9 +30,16 @@ export default function App() {
             </PrivateRouteAdmin>
           }
         />
-
+        <Route
+          path="/product"
+          element={
+            <PrivateRouteAdmin>
+              <Product />
+            </PrivateRouteAdmin>
+          }
+        />
+        <Route path="/cart" element={<Cart />} />
         <Route path="/beranda" element={<Beranda />} />
-        <Route path="/fashion" element={<Fashion />} />
 
         <Route path="*" element={<Navigate to="/beranda" replace />} />
       </Routes>
