@@ -7,7 +7,6 @@ export default function ProductCard({ product }) {
   const [localStock, setLocalStock] = useState(product.stok);
   const isOutOfStock = !localStock || localStock <= 0;
 
-  // Helper to update stock in DB
   const updateStockInDB = async (newStock) => {
     try {
       await axios.put(
@@ -31,21 +30,12 @@ export default function ProductCard({ product }) {
     }
 
     try {
-      // Add to cart
       await axios.post(
         "http://localhost:8000/api/carts",
-        {
-          product_id: product.id,
-          qty: 1,
-        },
-        {
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        }
+        { product_id: product.id, qty: 1 },
+        { headers: { Authorization: "Bearer " + localStorage.getItem("token") } }
       );
 
-      // Update stock both locally + in DB
       const newStock = localStock - 1;
       setLocalStock(newStock);
       await updateStockInDB(newStock);
@@ -62,30 +52,31 @@ export default function ProductCard({ product }) {
       alert("Produk habis, tidak bisa dibeli.");
       return;
     }
-
-    try {
-      await handleAddToCart();
-      window.location.href = "/cart";
-    } catch (err) {
-      console.error(err);
-    }
+    await handleAddToCart();
+    window.location.href = "/cart";
   };
 
   return (
     <div className="col-6 col-md-3">
-      <div className="product-card">
+      <div className={`product-card ${isOutOfStock ? "out-of-stock" : ""}`}>
         <div className="product-img">
-          {isOutOfStock && <span className="badge-soldout">Stok Habis</span>}
+          {isOutOfStock && (
+            <div className="overlay">
+              <span className="badge-soldout">Stok Habis</span>
+            </div>
+          )}
           <img
             src={product.image_url || "/contoh.png"}
             alt={product.nama}
-            className="img-fluid"
+            className={`img-fluid ${isOutOfStock ? "dimmed" : ""}`}
           />
         </div>
         <div className="product-body">
           <h6 className="product-title">{product.nama}</h6>
           <p className="product-price">Rp {product.harga}</p>
-          <p className="product-stock">Sisa stok: {localStock}</p>
+          <p className="product-stock">
+            {isOutOfStock ? "Stok Habis" : `Sisa stok: ${localStock}`}
+          </p>
           <div className="product-actions">
             <button
               className="btn-cart"

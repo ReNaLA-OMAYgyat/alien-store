@@ -3,15 +3,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([]); // ✅ flattened cart items
+  const [cartItems, setCartItems] = useState([]); // flattened cart items
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("");
-
-  // ✅ Helper: merge duplicate products across carts
+  // Helper: merge duplicate products across carts
   const mergeCartItems = (carts) => {
     const merged = {};
     carts.forEach((cart) => {
@@ -26,23 +23,18 @@ export default function CartPage() {
     return Object.values(merged);
   };
 
-  // ✅ Fetch carts + categories + subcategories
   const refreshCarts = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const [cartsRes, catRes, subRes] = await Promise.all([
+      const [cartsRes] = await Promise.all([
         axios.get("http://localhost:8000/api/carts", {
           headers: { Authorization: "Bearer " + token },
         }),
-        axios.get("http://localhost:8000/api/user-categories"),
-        axios.get("http://localhost:8000/api/user-subcategories"),
       ]);
 
       const mergedItems = mergeCartItems(cartsRes.data || []);
       setCartItems(mergedItems);
-      setCategories(catRes.data || []);
-      setSubcategories(subRes.data || []);
     } catch (err) {
       console.error("API error:", err.response?.data || err);
       setCartItems([]);
@@ -54,27 +46,6 @@ export default function CartPage() {
   useEffect(() => {
     refreshCarts();
   }, []);
-
-  const getCategoryInfo = (subcategoryId) => {
-    const sub = subcategories.find((s) => s.id === subcategoryId);
-    if (!sub) return { category: "N/A", subcategory: "N/A" };
-    const cat = categories.find((c) => c.id === sub.category_id);
-    return {
-      category: cat ? cat.name : "N/A",
-      subcategory: sub.name,
-    };
-  };
-
-  const filterItems = (items) => {
-    return items.filter((item) => {
-      const { category, subcategory } = getCategoryInfo(
-        item.product.subcategory_id
-      );
-      if (selectedCategory && category !== selectedCategory) return false;
-      if (selectedSubcategory && subcategory !== selectedSubcategory) return false;
-      return true;
-    });
-  };
 
   const removeProduct = async (cartId, productId) => {
     try {
@@ -112,7 +83,7 @@ export default function CartPage() {
     }
   };
 
-  const totalPrice = filterItems(cartItems).reduce(
+  const totalPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
   );
@@ -123,110 +94,58 @@ export default function CartPage() {
     <div className="container my-5">
       <h1 className="mb-4">Shopping Cart</h1>
 
-      {/* Filters */}
-      <div className="mb-4 d-flex gap-3">
-        <select
-          className="form-select"
-          value={selectedCategory}
-          onChange={(e) => {
-            setSelectedCategory(e.target.value);
-            setSelectedSubcategory("");
-          }}
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="form-select"
-          value={selectedSubcategory}
-          onChange={(e) => setSelectedSubcategory(e.target.value)}
-        >
-          <option value="">All Subcategories</option>
-          {subcategories
-            .filter(
-              (sub) =>
-                !selectedCategory ||
-                categories.find((c) => c.id === sub.category_id)?.name ===
-                  selectedCategory
-            )
-            .map((sub) => (
-              <option key={sub.id} value={sub.name}>
-                {sub.name}
-              </option>
-            ))}
-        </select>
-      </div>
-
       <div className="row">
         <div className="col-md-8">
           {cartItems.length > 0 ? (
-            filterItems(cartItems).map((item) => {
-              const { category, subcategory } = getCategoryInfo(
-                item.product.subcategory_id
-              );
-
-              return (
-                <div
-                  key={item.product_id}
-                  className="card shadow-sm mb-3 p-3 d-flex flex-row align-items-center justify-content-between"
-                >
-                  <div className="d-flex align-items-center gap-3">
-                    <img
-                      src={item.product.image_url || "/contoh.png"}
-                      alt={item.product.nama}
-                      className="rounded"
-                      width="80"
-                      height="80"
-                    />
-                    <div>
-                      <h5 className="mb-1">{item.product.nama}</h5>
-                      <p className="text-muted mb-0">Rp {item.price}</p>
-                      <small className="text-muted">
-                        Category: {category}
-                        <br />
-                        Subcategory: {subcategory}
-                      </small>
-                    </div>
+            cartItems.map((item) => (
+              <div
+                key={item.product_id}
+                className="card shadow-sm mb-3 p-3 d-flex flex-row align-items-center justify-content-between"
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <img
+                    src={item.product.image_url || "/contoh.png"}
+                    alt={item.product.nama}
+                    className="rounded"
+                    width="80"
+                    height="80"
+                  />
+                  <div>
+                    <h5 className="mb-1">{item.product.nama}</h5>
+                    <p className="text-muted mb-0">Rp {item.price}</p>
                   </div>
-
-                  <div className="d-flex align-items-center gap-2">
-                    <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() =>
-                        updateQuantity(item.cartId, item.product_id, item.qty - 1)
-                      }
-                    >
-                      -
-                    </button>
-                    <span>{item.qty}</span>
-                    <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() =>
-                        updateQuantity(item.cartId, item.product_id, item.qty + 1)
-                      }
-                    >
-                      +
-                    </button>
-
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeProduct(item.cartId, item.product_id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <p className="fw-bold mb-0">
-                    Rp {item.price * item.qty}
-                  </p>
                 </div>
-              );
-            })
+
+                <div className="d-flex align-items-center gap-2">
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() =>
+                      updateQuantity(item.cartId, item.product_id, item.qty - 1)
+                    }
+                  >
+                    -
+                  </button>
+                  <span>{item.qty}</span>
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() =>
+                      updateQuantity(item.cartId, item.product_id, item.qty + 1)
+                    }
+                  >
+                    +
+                  </button>
+
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => removeProduct(item.cartId, item.product_id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <p className="fw-bold mb-0">Rp {item.price * item.qty}</p>
+              </div>
+            ))
           ) : (
             <p className="text-muted">Your cart is empty.</p>
           )}
