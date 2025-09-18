@@ -3,120 +3,256 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]); // ✅ flattened cart items
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch cart items from Laravel
-  useEffect(() => {
-    axios.get("http://localhost:8000/api/carts", {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"), // if using Sanctum/Passport/JWT
-      },
-    })
-    .then(res => {
-      setCartItems(res.data); // depends on how your CartController returns data
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error(err);
-      setLoading(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+
+  // ✅ Helper: merge duplicate products across carts
+  const mergeCartItems = (carts) => {
+    const merged = {};
+    carts.forEach((cart) => {
+      cart.items.forEach((item) => {
+        if (merged[item.product_id]) {
+          merged[item.product_id].qty += item.qty;
+        } else {
+          merged[item.product_id] = { ...item, cartId: cart.id };
+        }
+      });
     });
+    return Object.values(merged);
+  };
+
+  // ✅ Fetch carts + categories + subcategories
+  const refreshCarts = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const [cartsRes, catRes, subRes] = await Promise.all([
+        axios.get("http://localhost:8000/api/carts", {
+          headers: { Authorization: "Bearer " + token },
+        }),
+        axios.get("http://localhost:8000/api/user-categories"),
+        axios.get("http://localhost:8000/api/user-subcategories"),
+      ]);
+
+      const mergedItems = mergeCartItems(cartsRes.data || []);
+      setCartItems(mergedItems);
+      setCategories(catRes.data || []);
+      setSubcategories(subRes.data || []);
+    } catch (err) {
+      console.error("API error:", err.response?.data || err);
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshCarts();
   }, []);
 
-  // Update quantity
-  const updateQuantity = async (id, quantity) => {
-    try {
-      await axios.put(`http://localhost:8000/api/carts/${id}`, { quantity });
-      setCartItems(prev =>
-        prev.map(item => item.id === id ? { ...item, quantity } : item)
+  const getCategoryInfo = (subcategoryId) => {
+    const sub = subcategories.find((s) => s.id === subcategoryId);
+    if (!sub) return { category: "N/A", subcategory: "N/A" };
+    const cat = categories.find((c) => c.id === sub.category_id);
+    return {
+      category: cat ? cat.name : "N/A",
+      subcategory: sub.name,
+    };
+  };
+
+  const filterItems = (items) => {
+    return items.filter((item) => {
+      const { category, subcategory } = getCategoryInfo(
+        item.product.subcategory_id
       );
-    } catch (err) {
-      console.error(err);
-    }
+      if (selectedCategory && category !== selectedCategory) return false;
+      if (selectedSubcategory && subcategory !== selectedSubcategory) return false;
+      return true;
+    });
   };
 
-  // Remove item
-  const removeItem = async (id) => {
+  const removeProduct = async (cartId, productId) => {
     try {
-      await axios.delete(`http://localhost:8000/api/carts/${id}`);
-      setCartItems(prev => prev.filter(item => item.id !== id));
+      await axios.put(
+        `http://localhost:8000/api/carts/${cartId}`,
+        { product_id: productId, qty: 0 },
+        {
+          headers: { Authorization: "Bearer " + localStorage.getItem("token") },
+        }
+      );
+      await refreshCarts();
     } catch (err) {
-      console.error(err);
+      console.error("Error removing product:", err.response?.data || err);
     }
   };
 
-  // Calculate total
-  const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const updateQuantity = async (cartId, productId, newQty) => {
+    try {
+      if (newQty < 1) {
+        await removeProduct(cartId, productId);
+        return;
+      }
+
+      await axios.put(
+        `http://localhost:8000/api/carts/${cartId}`,
+        { product_id: productId, qty: newQty },
+        {
+          headers: { Authorization: "Bearer " + localStorage.getItem("token") },
+        }
+      );
+
+      await refreshCarts();
+    } catch (err) {
+      console.error("Error updating quantity:", err.response?.data || err);
+    }
+  };
+
+  const totalPrice = filterItems(cartItems).reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
 
   if (loading) return <p className="text-center mt-5">Loading cart...</p>;
 
   return (
     <div className="container my-5">
       <h1 className="mb-4">Shopping Cart</h1>
+
+      {/* Filters */}
+      <div className="mb-4 d-flex gap-3">
+        <select
+          className="form-select"
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setSelectedSubcategory("");
+          }}
+        >
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.name}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="form-select"
+          value={selectedSubcategory}
+          onChange={(e) => setSelectedSubcategory(e.target.value)}
+        >
+          <option value="">All Subcategories</option>
+          {subcategories
+            .filter(
+              (sub) =>
+                !selectedCategory ||
+                categories.find((c) => c.id === sub.category_id)?.name ===
+                  selectedCategory
+            )
+            .map((sub) => (
+              <option key={sub.id} value={sub.name}>
+                {sub.name}
+              </option>
+            ))}
+        </select>
+      </div>
+
       <div className="row">
-        {/* Cart Items */}
         <div className="col-md-8">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              {cartItems.length > 0 ? (
-                cartItems.map(item => (
-                  <div key={item.id} className="d-flex align-items-center justify-content-between border-bottom py-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <img src={item.image_url} alt={item.name} className="rounded" width="80" height="80" />
-                      <div>
-                        <h5 className="mb-1">{item.name}</h5>
-                        <p className="text-muted mb-0">${item.price}</p>
-                      </div>
-                    </div>
+          {cartItems.length > 0 ? (
+            filterItems(cartItems).map((item) => {
+              const { category, subcategory } = getCategoryInfo(
+                item.product.subcategory_id
+              );
 
-                    <div className="d-flex align-items-center gap-2">
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      >
-                        -
-                      </button>
-                      <span>{item.quantity}</span>
-                      <button
-                        className="btn btn-sm btn-outline-secondary"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      >
-                        +
-                      </button>
+              return (
+                <div
+                  key={item.product_id}
+                  className="card shadow-sm mb-3 p-3 d-flex flex-row align-items-center justify-content-between"
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <img
+                      src={item.product.image_url || "/contoh.png"}
+                      alt={item.product.nama}
+                      className="rounded"
+                      width="80"
+                      height="80"
+                    />
+                    <div>
+                      <h5 className="mb-1">{item.product.nama}</h5>
+                      <p className="text-muted mb-0">Rp {item.price}</p>
+                      <small className="text-muted">
+                        Category: {category}
+                        <br />
+                        Subcategory: {subcategory}
+                      </small>
                     </div>
+                  </div>
 
-                    <p className="fw-bold mb-0">${item.price * item.quantity}</p>
-                    <button className="btn btn-link text-danger p-0" onClick={() => removeItem(item.id)}>
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() =>
+                        updateQuantity(item.cartId, item.product_id, item.qty - 1)
+                      }
+                    >
+                      -
+                    </button>
+                    <span>{item.qty}</span>
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() =>
+                        updateQuantity(item.cartId, item.product_id, item.qty + 1)
+                      }
+                    >
+                      +
+                    </button>
+
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => removeProduct(item.cartId, item.product_id)}
+                    >
                       Remove
                     </button>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted">Your cart is empty.</p>
-              )}
-            </div>
-          </div>
+
+                  <p className="fw-bold mb-0">
+                    Rp {item.price * item.qty}
+                  </p>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-muted">Your cart is empty.</p>
+          )}
         </div>
 
-        {/* Order Summary */}
+        {/* Order summary */}
         <div className="col-md-4 mt-4 mt-md-0">
           <div className="card shadow-sm">
             <div className="card-body">
               <h5 className="card-title">Order Summary</h5>
               <div className="d-flex justify-content-between mb-2">
                 <span>Subtotal</span>
-                <span>${totalPrice}</span>
+                <span>Rp {totalPrice}</span>
               </div>
               <div className="d-flex justify-content-between mb-2">
                 <span>Shipping</span>
-                <span>$5</span>
+                <span>Rp 20000</span>
               </div>
               <hr />
               <div className="d-flex justify-content-between fw-bold">
                 <span>Total</span>
-                <span>${totalPrice + 5}</span>
+                <span>Rp {totalPrice + 20000}</span>
               </div>
-              <button className="btn btn-primary w-100 mt-3">Proceed to Checkout</button>
+              <button className="btn btn-primary w-100 mt-3">
+                Proceed to Checkout
+              </button>
             </div>
           </div>
         </div>
