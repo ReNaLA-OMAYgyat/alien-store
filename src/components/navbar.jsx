@@ -100,7 +100,6 @@ export default function Navbar() {
           <div className="btn btn-primary rounded-circle p-2"><FaTwitter className="text-white" /></div>
         </div>
       </div>
-
     </div>
   );
 }
