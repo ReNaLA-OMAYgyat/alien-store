@@ -1,13 +1,13 @@
 // HomeCarousel.jsx
 import React from "react";
-import images1 from "../assets/images/sepatu.jpg";
-import images2 from "../assets/images/sembako.jpg";
-import images3 from "../assets/images/snack.jpg";
+import Images1 from "../assets/images/sepatu.jpg";
+import Images2 from "../assets/images/sembako.jpg";
+import Images3 from "../assets/images/snack.jpg";
 export default function HomeCarousel() {
   const slides = [
-    { id: 1, title: "Selamat Datang", subtitle: "Temukan produk favoritmu!", image: "images1", buttonText: "Belanja Sekarang", buttonLink: "#" },
-    { id: 2, title: "Promo Spesial", subtitle: "Diskon hingga 50%", image: "https://images.asics.com/is/image/asics/1183B493_100_SR_RT_GLB?qlt=100&wid=1024&hei=768&bgc=255,255,255&resMode=bisharp", buttonText: "Lihat Promo", buttonLink: "#" },
-    { id: 3, title: "Produk Baru", subtitle: "Jangan sampai ketinggalan tren terbaru", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlWLxPNCqoOlAXS-F_0BP9jpaDPKZNqtgYsw&s", buttonText: "Cek Sekarang", buttonLink: "#" },
+    { id: 1, title: "Selamat Datang", subtitle: "Temukan produk favoritmu!", image: Images1, buttonText: "Belanja Sekarang", buttonLink: "#" },
+    { id: 2, title: "Promo Spesial", subtitle: "Diskon hingga 50%", image: Images2, buttonText: "Lihat Promo", buttonLink: "#" },
+    { id: 3, title: "Produk Baru", subtitle: "Jangan sampai ketinggalan tren terbaru", image: Images3, buttonText: "Cek Sekarang", buttonLink: "#" },
   ];
 
   return (
