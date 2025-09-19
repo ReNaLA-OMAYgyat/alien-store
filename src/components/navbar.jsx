@@ -77,15 +77,7 @@ function Navbar() {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <div className="d-lg-flex align-items-lg-center justify-content-between w-100 gap-3">
-            {/* Kiri: Menu & Search */}
-            <div className="d-flex gap-2 mb-2 mb-lg-0">
-              <button className="btn btn-outline-secondary d-flex align-items-center gap-1">
-                <i className="bi bi-list"></i> Menu
-              </button>
-              <button className="btn btn-outline-secondary d-flex align-items-center gap-1">
-                <i className="bi bi-search"></i> Search
-              </button>
-            </div>
+           
 
             {/* Tengah: Link navigasi */}
             <ul className="navbar-nav fw-bold gap-3 mx-lg-auto mb-2 mb-lg-0">

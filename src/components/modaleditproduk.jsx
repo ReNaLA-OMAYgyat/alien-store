@@ -37,19 +37,21 @@ export default function DetailProductModal({ show, onClose, onSaved, productDeta
   // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      if (productDetail) {
-        // Update detail produk
-        await api.put(`/products-detail/${productDetail.id}`, form);
-      } else {
-        // Tambah detail produk
-        await api.post("/products-detail", form);
-      }
-      onSaved(); // panggil fungsi dari parent untuk refresh data
-      onClose();
-    } catch (err) {
-      console.error("Error saving detail product:", err.response?.data || err);
-    }
+   try {
+  if (productDetail) {
+    await api.put(`/products-detail/${productDetail.id}`, form);
+  } else {
+    await api.post("/products-detail", form);
+  }
+
+  alert("Data detail produk berhasil disimpan ✅");
+
+  onSaved();
+  onClose();
+} catch (err) {
+  console.error("Error saving detail product:", err.response?.data || err);
+  alert("Gagal menyimpan detail produk ❌");
+}
   };
 
   if (!show) return null;
@@ -108,20 +110,21 @@ export default function DetailProductModal({ show, onClose, onSaved, productDeta
 
               <div className="mb-3">
                 <label className="form-label">Produk</label>
-                <select
-                  name="product_id"
-                  className="form-select"
-                  value={form.product_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Pilih Produk</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nama}
-                    </option>
-                  ))}
-                </select>
+               <select
+  name="product_id"
+  className="form-select"
+  value={form.product_id}
+  onChange={handleChange}
+  required
+>
+  <option value="">Pilih Produk</option>
+  {products?.map((p) => (
+    <option key={p.id} value={p.id}>
+      {p.nama}
+    </option>
+  ))}
+</select>
+
               </div>
             </div>
 

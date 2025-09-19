@@ -3,7 +3,7 @@ import api from "../api";
 import Sidebar from "../components/sidebar.jsx";
 import ProductModal from "../components/modalproduct.jsx";
 import DetailProductModal from "../components/modaleditproduk.jsx";
-import ModalShowDetail from "../components/modaleditproduk.jsx";
+import ModalShowDetail from "../components/modalshowproduk.jsx";
 
 
 export default function Product() {
@@ -12,7 +12,7 @@ export default function Product() {
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [productDetail, setProductDetail] = useState(null);
-
+  
   // Table / UX state
   const [searchQuery, setSearchQuery] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
@@ -20,11 +20,15 @@ export default function Product() {
   const [pageSize, setPageSize] = useState(10);
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [density, setDensity] = useState("comfortable");
-
+  
   // Modal & selected product
+  const [showShowDetailModal, setShowShowDetailModal] = useState(false); // untuk show-only
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [productDetails, setProductDetails] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+
 
   // Delete
   const [productToDelete, setProductToDelete] = useState(null);
@@ -51,6 +55,14 @@ export default function Product() {
   const fetchCategories = async () => {
     try {
       const res = await api.get("/categories");
+      setCategories(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const fetchProductDetail = async () => {
+    try {
+      const res = await api.get("/product-detail");
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -317,34 +329,47 @@ export default function Product() {
                       <td>{getSubcategoryName(p.subcategory_id)}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          <button
-                            className="btn btn-outline-primary"
-                            onClick={() => { setSelectedProduct(p); setShowModal(true); }}
-                          >
-                            <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
-                            className="btn btn-outline-danger"
-                            onClick={() => setProductToDelete(p)}
-                          >
-                            <i className="bi bi-trash3"></i>
-                          </button>
-                          <button
-                            className="btn btn-outline-info"
-                            onClick={() => { setSelectedProduct(p); setShowDetailModal(true); }}
-                          >
-                            <i className="bi bi-card-list"></i>
-                          </button>
-                         <button
+                          <div className="btn-group btn-group-sm">
+  <button
+    className="btn btn-outline-primary"
+    onClick={() => {
+      setSelectedProduct(p);
+      setShowModal(true);
+    }}
+  >
+    <i className="bi bi-pencil-square"></i>
+  </button>
+
+  <button
+    className="btn btn-outline-danger"
+    onClick={() => setProductToDelete(p)}
+  >
+    <i className="bi bi-trash3"></i>
+  </button>
+
+  {/* CRUD Detail */}
+  <button
+    className="btn btn-outline-warning"
+    onClick={() => {
+      setSelectedProduct(p);
+      setShowDetailModal(true);
+    }}
+  >
+    <i className="bi bi-gear"></i>
+  </button>
+
+ <button
   className="btn btn-outline-info"
-  onClick={() => {
-    setSelectedProduct(p); // simpan produk yang dipilih
-    setProductDetail(p.detail || null); // ambil detail produk
-    setShowDetailModal(true); // tampilkan modal show
+  onClick={async () => {
+    setSelectedProductId(p.id); // ✅ simpan ID produk
+    setShowShowDetailModal(true);
   }}
 >
   <i className="bi bi-card-list"></i>
 </button>
+
+
+</div>
 
 
 
@@ -409,25 +434,26 @@ export default function Product() {
         />
       )}
 
-      {/* Modal Detail */}
-      {showDetailModal && (
-        <DetailProductModal
-          show={showDetailModal}
-          onClose={() => setShowDetailModal(false)}
-          onSaved={fetchProducts}
-          productDetail={null}
-          products={products}
-        />
-      )}
-
-      {/* Modal Detail */}
+     {/* Modal CRUD Detail */}
 {showDetailModal && (
-  <ModalShowDetail
+  <DetailProductModal
     show={showDetailModal}
     onClose={() => setShowDetailModal(false)}
-    productDetail={productDetail} // hanya show, tidak CRUD
+    onSaved={fetchProducts}
+    productDetail={selectedProduct} // produk yg dipilih
+    products={products}
   />
 )}
+
+<ModalShowDetail
+  show={showShowDetailModal}
+  onClose={() => setShowShowDetailModal(false)}
+  productId={selectedProductId}
+/>
+
+
+
+
 
 
       {/* Delete Confirmation */}
