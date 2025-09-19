@@ -10,41 +10,37 @@ export default function Daftar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role_id, setRoleId] = useState(2);
+  const [role_id] = useState(2);
+  const [errors, setErrors] = useState({}); // state untuk error
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-if (password !== confirmPassword) {
-      alert("Password dan Konfirmasi Password tidak cocok!");
+    if (password !== confirmPassword) {
+      setErrors({ password: ["Password dan Konfirmasi Password tidak cocok!"] });
       return;
-}
-     try {
+    }
+
+    try {
       await api.post("/register", {
         name: nama,
         email: email,
         password: password,
-        password_confirmation: confirmPassword, 
-        role_id : role_id 
+        password_confirmation: confirmPassword,
+        role_id: role_id,
       });
 
       alert("Daftar berhasil!");
       navigate("/login");
     } catch (err) {
-  if (err.response) {
-    console.log("Error Response:", err.response.data);
-    alert("Daftar gagal: " + (err.response.data.message || "Terjadi kesalahan"));
-  } else if (err.request) {
-    console.log("Error Request:", err.request);
-    alert("Server tidak merespon. Cek URL API kamu!");
-  } else {
-    console.log("Error Message:", err.message);
-    alert("Terjadi error: " + err.message);
-  }
-}
-
-
+      if (err.response?.status === 422) {
+        setErrors(err.response.data.errors); // tangkap error validasi Laravel
+      } else {
+        alert(err.response?.data?.message || "Terjadi kesalahan, coba lagi.");
+      }
+    }
   };
+
   return (
     <div
       className="d-flex justify-content-center align-items-center vh-100"
@@ -75,12 +71,10 @@ if (password !== confirmPassword) {
             src="/contoh.png"
             alt="Logo"
             className="mx-auto d-block mb-7"
-            style={{
-              width: "105px",
-              padding: "10px",
-            }}
+            style={{ width: "105px", padding: "10px" }}
           />
         </div>
+
         <h2 className="text-center mb-4 fw-bold text-primary">Daftar Akun</h2>
         <form onSubmit={handleRegister}>
           {/* Nama */}
@@ -90,15 +84,20 @@ if (password !== confirmPassword) {
             </label>
             <input
               type="text"
-              className="form-control p-3 btn btn-outline-dark"
+              className={`form-control p-3 btn btn-outline-dark ${
+                errors.name ? "is-invalid" : ""
+              }`}
               id="nama"
               placeholder="Nama lengkap"
-              required
-              style={{ borderRadius: "12px", padding: "10px" }}
               value={nama}
               onChange={(e) => setNama(e.target.value)}
+              required
             />
+            {errors.name && (
+              <div className="invalid-feedback">{errors.name[0]}</div>
+            )}
           </div>
+
           {/* Email */}
           <div className="mb-3">
             <label htmlFor="email" className="form-label fw-semibold">
@@ -106,23 +105,20 @@ if (password !== confirmPassword) {
             </label>
             <input
               type="email"
-              className="form-control p-3 btn btn-outline-dark"
+              className={`form-control p-3 btn btn-outline-dark ${
+                errors.email ? "is-invalid" : ""
+              }`}
               id="email"
               placeholder="email@email.com"
-              required
-              style={{ borderRadius: "12px", padding: "10px" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
+            {errors.email && (
+              <div className="invalid-feedback">{errors.email[0]}</div>
+            )}
           </div>
-          <div className="mb-3">
-            <input
-              type="hidden"
-              className="form-control p-3 btn btn-outline-dark"
-              id="role_id"
-              value={2}
-            />
-          </div>
+
           {/* Password */}
           <div className="mb-3">
             <label htmlFor="password" className="form-label fw-semibold">
@@ -131,38 +127,52 @@ if (password !== confirmPassword) {
             <div className="input-group">
               <input
                 type={showPassword ? "text" : "password"}
-                className="form-control p-3 btn btn-outline-dark"
+                className={`form-control p-3 btn btn-outline-dark ${
+                  errors.password ? "is-invalid" : ""
+                }`}
                 id="password"
                 placeholder="Buat password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-/>
-
+              />
               <button
                 type="button"
                 className="btn btn-outline-dark"
                 onClick={() => setShowPassword((prev) => !prev)}
-                style={{ borderRadius: "0 12px 12px 0" }}
               >
                 <i
                   className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
                 ></i>
               </button>
             </div>
+            {errors.password && (
+              <div className="invalid-feedback d-block">
+                {errors.password[0]}
+              </div>
+            )}
           </div>
-           {/* Confirm Password */}
+
+          {/* Konfirmasi Password */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Konfirmasi Password</label>
             <div className="input-group">
-              <input type={showConfirm ? "text" : "password"}
+              <input
+                type={showConfirm ? "text" : "password"}
                 className="form-control p-3 btn btn-outline-dark"
                 placeholder="Ulangi password"
-                required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-              <button type="button" className="btn btn-outline-dark"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-dark"
                 onClick={() => setShowConfirm((prev) => !prev)}
-                style={{ borderRadius: "0 12px 12px 0" }}>
-                <i className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"}`}></i>
+              >
+                <i
+                  className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"}`}
+                ></i>
               </button>
             </div>
           </div>
@@ -171,25 +181,17 @@ if (password !== confirmPassword) {
           <button
             type="submit"
             className="btn btn-primary w-100 p-3 fw-semibold"
-            style={{ borderRadius: "12px 12px " }}
+            style={{ borderRadius: "12px" }}
           >
             Daftar
           </button>
         </form>
+
         {/* Footer */}
         <p className="text-center mt-4 mb-0 text-muted">
           Sudah punya akun? <Link to="/login">Login</Link>
         </p>
       </div>
-      <style>{`
-        .form-control:focus {
-          box-shadow: 0 0 0 2px #0d6efd33;
-          border-color: #0d6efd;
-        }
-        .btn-primary:hover {
-          background: #0b5ed7;
-        }
-      `}</style>
     </div>
   );
 }

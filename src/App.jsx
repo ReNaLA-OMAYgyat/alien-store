@@ -8,6 +8,7 @@ import PrivateRouteAdmin from "./components/ProtecRoute";
 import Product from "./pages/product";
 import Cart from "./pages/cart";
 import ErrorBoundary from "./ErrorBoundary";
+import Admin from "./pages/admin";
 export default function App() {
   const location = useLocation();
 
@@ -16,7 +17,9 @@ export default function App() {
       {location.pathname !== "/login" &&
         location.pathname !== "/daftar" &&
         location.pathname !== "/dashboard" &&
-        location.pathname !== "/product" && <Navbar />}
+        location.pathname !== "/product" && 
+        location.pathname !== "/admin" && 
+        <Navbar />}
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />
 
@@ -35,6 +38,14 @@ export default function App() {
           element={
             <PrivateRouteAdmin>
               <Product />
+            </PrivateRouteAdmin>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <PrivateRouteAdmin>
+              <Admin />
             </PrivateRouteAdmin>
           }
         />
