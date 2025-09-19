@@ -1,63 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+// src/components/Navbar.jsx
+import React from "react";
+import { FaFacebookF, FaInstagram, FaTwitter } from "react-icons/fa";
+import { BsLightning, BsPerson, BsBag } from "react-icons/bs";
+import { AiOutlineMenu, AiOutlineSearch, AiOutlineArrowRight } from "react-icons/ai";
 
-function Navbar() {
-  const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState("");
-
-  useEffect(() => {
-    // cek token di localStorage (anggap token disimpan saat login)
-    const token = localStorage.getItem("token");
-    const savedRole = localStorage.getItem("role") || "";
-    setIsLoggedIn(!!token);
-    setRole(savedRole);
-  }, []);
-
-  // Listen for storage changes (when user logs in from another tab)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const token = localStorage.getItem("token");
-      const savedRole = localStorage.getItem("role") || "";
-      setIsLoggedIn(!!token);
-      setRole(savedRole);
-    };
-
-    const handleUserLogin = (event) => {
-      const token = localStorage.getItem("token");
-      const savedRole = localStorage.getItem("role") || "";
-      setIsLoggedIn(!!token);
-      setRole(savedRole);
-    };
-
-    const handleUserLogout = () => {
-      setIsLoggedIn(false);
-      setRole("");
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("userLogin", handleUserLogin);
-    window.addEventListener("userLogout", handleUserLogout);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("userLogin", handleUserLogin);
-      window.removeEventListener("userLogout", handleUserLogout);
-    };
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-
-    // Trigger custom event untuk update navbar
-    window.dispatchEvent(new CustomEvent("userLogout"));
-
-    navigate("/login");
-  };
-
+export default function Navbar() {
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm sticky-top">
+    <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
       <div className="container">
         <Link className="navbar-brand fw-bold" to="/">
           AlienStore
@@ -128,8 +77,30 @@ function Navbar() {
           </div>
         </div>
       </div>
-    </nav>
+
+      {/* Search and social */}
+      <div className="container-fluid bg-light py-3 d-flex align-items-center">
+        <div className="d-flex align-items-center flex-grow-1 me-3">
+          <label className="me-2 mb-0 text-dark">Search items:</label>
+          <div className="input-group">
+            <input type="text" className="form-control" placeholder="Search..." />
+            <span className="input-group-text bg-white">
+              <AiOutlineSearch />
+            </span>
+          </div>
+        </div>
+
+        <button className="btn btn-warning me-3">
+          <AiOutlineArrowRight />
+        </button>
+
+        <div className="d-flex gap-2">
+          <div className="btn btn-primary rounded-circle p-2"><FaFacebookF className="text-white" /></div>
+          <div className="btn btn-primary rounded-circle p-2"><FaInstagram className="text-white" /></div>
+          <div className="btn btn-primary rounded-circle p-2"><FaTwitter className="text-white" /></div>
+        </div>
+      </div>
+
+    </div>
   );
 }
-
-export default Navbar;
